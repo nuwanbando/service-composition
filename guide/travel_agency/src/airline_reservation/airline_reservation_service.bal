@@ -16,12 +16,13 @@
 
 import ballerina/http;
 import ballerina/log;
+import ballerina/stringutils;
 //import ballerinax/docker;
 //import ballerinax/kubernetes;
 
 //@docker:Config {
 //    registry:"ballerina.guides.io",
-//    name:"car_rental_service",
+//    name:"airline_reservation_service",
 //    tag:"v1.0"
 //}
 //
@@ -29,34 +30,36 @@ import ballerina/log;
 
 //@kubernetes:Ingress {
 //  hostname:"ballerina.guides.io",
-//  name:"ballerina-guides-car-rental-service",
+//  name:"ballerina-guides-airline-reservation-service",
 //  path:"/"
 //}
 //
 //@kubernetes:Service {
 //  serviceType:"NodePort",
-//  name:"ballerina-guides-car-rental-service"
+//  name:"ballerina-guides-airline-reservation-service"
 //}
 //
 //@kubernetes:Deployment {
-//  image:"ballerina.guides.io/car_rental_service:v1.0",
-//  name:"ballerina-guides-car-rental-service"
+//  image:"ballerina.guides.io/airline_reservation_service:v1.0",
+//  name:"ballerina-guides-airline-reservation-service"
 //}
 
 // Service endpoint
-listener http:Listener carEP = new(9093);
+listener http:Listener airlineEP = new(9091);
 
-// Available car types
-final string AC = "Air Conditioned";
-final string NORMAL = "Normal";
+// Available flight classes
+final string ECONOMY = "Economy";
+final string BUSINESS = "Business";
+final string FIRST = "First";
 
-// Car rental service to rent cars
-@http:ServiceConfig {basePath:"/car"}
-service carRentalService on carEP {
+// Airline reservation service to reserve airline tickets
+@http:ServiceConfig {basePath:"/airline"}
+service airlineReservationService on airlineEP {
 
-    // Resource to rent a car
-    @http:ResourceConfig {methods:["POST"], path:"/rent", consumes:["application/json"], produces:["application/json"]}
-    resource function rentCar(http:Caller caller, http:Request request) {
+    // Resource to reserve a ticket
+    @http:ResourceConfig {methods:["POST"], path:"/reserve", consumes:["application/json"],
+        produces:["application/json"]}
+    resource function reserveTicket(http:Caller caller, http:Request request) returns error? {
         http:Response response = new;
         json reqPayload = {};
 
@@ -74,13 +77,13 @@ service carRentalService on carEP {
             return;
         }
 
-        json name = reqPayload.Name;
-        json arrivalDate = reqPayload.ArrivalDate;
-        json departDate = reqPayload.DepartureDate;
-        json preferredType = reqPayload.Preference;
+        json name = check reqPayload.Name;
+        json arrivalDate = check reqPayload.ArrivalDate;
+        json departDate = check reqPayload.DepartureDate;
+        json preferredClass = check reqPayload.Preference;
 
         // If payload parsing fails, send a "Bad Request" message as the response
-        if (name == () || arrivalDate == () || departDate == () || preferredType == ()) {
+        if (name == () || arrivalDate == () || departDate == () || preferredClass == ()) {
             response.statusCode = 400;
             response.setJsonPayload({"Message":"Bad Request - Invalid Payload"});
             var result = caller->respond(response);
@@ -89,13 +92,15 @@ service carRentalService on carEP {
         }
 
         // Mock logic
-        // If request is for an available car type, send a rental successful status
-        string preferredTypeStr = preferredType.toString();
-        if (preferredTypeStr.equalsIgnoreCase(AC) || preferredTypeStr.equalsIgnoreCase(NORMAL)) {
+        // If request is for an available flight class, send a reservation successful status
+        string preferredClassStr = preferredClass.toString();
+        if (stringutils:equalsIgnoreCase(preferredClassStr, ECONOMY) || 
+            stringutils:equalsIgnoreCase(preferredClassStr, BUSINESS) ||
+            stringutils:equalsIgnoreCase(preferredClassStr, FIRST)) {
             response.setJsonPayload({"Status":"Success"});
         }
         else {
-            // If request is not for an available car type, send a rental failure status
+            // If request is not for an available flight class, send a reservation failure status
             response.setJsonPayload({"Status":"Failed"});
         }
         // Send the response

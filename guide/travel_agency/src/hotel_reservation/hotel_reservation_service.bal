@@ -16,6 +16,7 @@
 
 import ballerina/http;
 import ballerina/log;
+import ballerina/stringutils;
 //import ballerinax/docker;
 //import ballerinax/kubernetes;
 
@@ -57,7 +58,7 @@ service hotelReservationService on hotelEP {
     // Resource to reserve a room
     @http:ResourceConfig {methods:["POST"], path:"/reserve", consumes:["application/json"],
         produces:["application/json"]}
-    resource function reserveRoom(http:Caller caller, http:Request request) {
+    resource function reserveRoom(http:Caller caller, http:Request request) returns error? {
         http:Response response = new;
         json reqPayload = {};
 
@@ -75,10 +76,10 @@ service hotelReservationService on hotelEP {
             return;
         }
 
-        json name = reqPayload.Name;
-        json arrivalDate = reqPayload.ArrivalDate;
-        json departDate = reqPayload.DepartureDate;
-        json preferredRoomType = reqPayload.Preference;
+        json name = check reqPayload.Name;
+        json arrivalDate = check reqPayload.ArrivalDate;
+        json departDate = check reqPayload.DepartureDate;
+        json preferredRoomType = check reqPayload.Preference;
 
         // If payload parsing fails, send a "Bad Request" message as the response
         if (name == () || arrivalDate == () || departDate == () || preferredRoomType == ()) {
@@ -92,7 +93,7 @@ service hotelReservationService on hotelEP {
         // Mock logic
         // If request is for an available room type, send a reservation successful status
         string preferredTypeStr = preferredRoomType.toString();
-        if (preferredTypeStr.equalsIgnoreCase(AC) || preferredTypeStr.equalsIgnoreCase(NORMAL)) {
+        if (stringutils:equalsIgnoreCase(preferredTypeStr, AC) || stringutils:equalsIgnoreCase(preferredTypeStr, NORMAL)) {
             response.setJsonPayload({"Status":"Success"});
         }
         else {

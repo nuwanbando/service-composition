@@ -18,12 +18,15 @@ import ballerina/test;
 import ballerina/http;
 
 // Client endpoint
-http:Client clientEP = new("http://localhost:9093/car");
+http:Client clientEP = new("http://localhost:9092/hotel");
 
-// Function to test Car rental service
-@test:Config
-function testCarRentalService() returns error? {
-    // Test the 'rentCar' resource
+// Function to test Hotel reservation service
+@test:Config{}
+function testHotelReservationService() returns error? {
+    // Initialize the empty http requests and responses
+    http:Request req;
+
+    // Test the 'reserveRoom' resource
     // Construct a request payload
     json payload = {
         "Name":"Alice",
@@ -33,9 +36,9 @@ function testCarRentalService() returns error? {
     };
 
     // Send a 'post' request and obtain the response
-    http:Response response = check clientEP -> post("/rent", payload);
+    http:Response response = check clientEP -> post("/reserve", payload);
     // Expected response code is 200
-    test:assertEquals(response.statusCode, 200, msg = "Car rental service did not respond with 200 OK signal!");
+    test:assertEquals(response.statusCode, 200, msg = "Hotel reservation service did not respond with 200 OK signal!");
     // Check whether the response is as expected
     json resPayload = check response.getJsonPayload();
     json expected = {"Status":"Success"};
